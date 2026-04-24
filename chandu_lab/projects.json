@@ -1,0 +1,40 @@
+{
+    "projects": [
+        {
+            "name": "Neuralmigrane",
+            "model": "TF-IDF+LOGISTICS rEGRESSION",
+            "dataset": "NEURALMIGRANE_CLEANSED.CSV",
+            "accuracy": 0.8306,
+            "loss": 0.0,
+            "notes": "Baseline classical ML",
+            "timestamp": "2026-02-13 20:17:00"
+        },
+        {
+            "name": "NeuralMigrane",
+            "model": "DistilBERT",
+            "dataset": "neuralmigrane_cleansed.csv",
+            "accuracy": 0.9291,
+            "loss": 0.1784,
+            "notes": "Fine_tuned 3 epochs, batch 16,LR 2e-5\n",
+            "timestamp": "2026-02-13 21:32:29"
+        },
+        {
+            "name": "GridWorld_5x5",
+            "model": "Q-Learning",
+            "dataset": "GridWorld env | walls=3",
+            "accuracy": 0.915,
+            "loss": 10.9,
+            "notes": "episodes=200, lr=0.1, gamma=0.95, best=9.30",
+            "timestamp": "2026-04-04 00:02:08"
+        },
+        {
+            "name": "GridWorld_5x5",
+            "model": "Q-Learning",
+            "dataset": "GridWorld env | walls=3",
+            "accuracy": 0.865,
+            "loss": 7.5,
+            "notes": "episodes=200, lr=0.1, gamma=0.95, best=9.30",
+            "timestamp": "2026-04-04 00:07:15"
+        }
+    ]
+}

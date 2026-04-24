@@ -1,0 +1,254 @@
+id,prompt,correct_answer,rule_type,difficulty,input_length
+1,"Learn the pattern from the examples and answer the question.
+
+DOG -> GOD
+CAT -> TAC
+FISH -> ?
+
+Answer only the result.",HSIF,reverse,easy,4
+2,"Learn the pattern from the examples and answer the question.
+
+SUN -> NUS
+CAR -> RAC
+TREE -> ?
+
+Answer only the result.",EERT,reverse,easy,4
+3,"Learn the pattern from the examples and answer the question.
+
+HOUSE -> ESOUH
+WATER -> RETAW
+SCHOOL -> ?
+
+Answer only the result.",LOOHCS,reverse,medium,6
+4,"Learn the pattern from the examples and answer the question.
+
+A1B -> B1A
+X9Y -> Y9X
+CODE7 -> ?
+
+Answer only the result.",7EDOC,reverse,hard,5
+5,"Learn the pattern from the examples and answer the question.
+
+AB -> BC
+CD -> DE
+EF -> ?
+
+Answer only the result.",FG,shift_plus_1,easy,2
+6,"Learn the pattern from the examples and answer the question.
+
+CAT -> DBU
+DOG -> EPH
+FAN -> GBO
+HAT -> ?
+
+Answer only the result.",IBU,shift_plus_1,easy,3
+7,"Learn the pattern from the examples and answer the question.
+
+NOTE -> OPUF
+GAME -> HBNF
+TIME -> ?
+
+Answer only the result.",UJNF,shift_plus_1,medium,4
+8,"Learn the pattern from the examples and answer the question.
+
+CODE -> DPEF
+PLAN -> QMBO
+SHIFT -> ?
+
+Answer only the result.",TIJGU,shift_plus_1,hard,5
+9,"Learn the pattern from the examples and answer the question.
+
+12 -> 21
+345 -> 543
+678 -> ?
+
+Answer only the result.",876,mirror_digits,easy,3
+10,"Learn the pattern from the examples and answer the question.
+
+90 -> 09
+123 -> 321
+450 -> ?
+
+Answer only the result.",054,mirror_digits,easy,3
+11,"Learn the pattern from the examples and answer the question.
+
+1024 -> 4201
+3567 -> 7653
+8910 -> ?
+
+Answer only the result.",0198,mirror_digits,medium,4
+12,"Learn the pattern from the examples and answer the question.
+
+A12 -> 21A
+B345 -> 543B
+C78 -> ?
+
+Answer only the result.",87C,mirror_digits,hard,3
+13,"Learn the pattern from the examples and answer the question.
+
+DOG -> GOD
+CAT -> TAC
+BIRD -> ?
+
+Answer only the result.",DRIB,reverse,easy,4
+14,"Learn the pattern from the examples and answer the question.
+
+DOG -> GOD
+CAT -> TAC
+MILK -> ?
+
+Answer only the result.",KLIM,reverse,easy,4
+15,"Learn the pattern from the examples and answer the question.
+
+DOG -> GOD
+CAT -> TAC
+STAR -> ?
+
+Answer only the result.",RATS,reverse,easy,4
+16,"Learn the pattern from the examples and answer the question.
+
+DOG -> GOD
+CAT -> TAC
+LAKE -> ?
+
+Answer only the result.",EKAL,reverse,easy,4
+17,"Learn the pattern from the examples and answer the question.
+
+HOUSE -> ESOUH
+WATER -> RETAW
+WINDOW -> ?
+
+Answer only the result.",WODNIW,reverse,medium,6
+18,"Learn the pattern from the examples and answer the question.
+
+HOUSE -> ESOUH
+WATER -> RETAW
+MARKET -> ?
+
+Answer only the result.",TEKRAM,reverse,medium,6
+19,"Learn the pattern from the examples and answer the question.
+
+HOUSE -> ESOUH
+WATER -> RETAW
+GARDEN -> ?
+
+Answer only the result.",NEDRAG,reverse,medium,6
+20,"Learn the pattern from the examples and answer the question.
+
+HOUSE -> ESOUH
+WATER -> RETAW
+PLANET -> ?
+
+Answer only the result.",TENALP,reverse,medium,6
+21,"Learn the pattern from the examples and answer the question.
+
+CAT -> DBU
+FAN -> GBO
+DOG -> ?
+
+Answer only the result.",EPH,shift_plus_1,easy,3
+22,"Learn the pattern from the examples and answer the question.
+
+CAT -> DBU
+FAN -> GBO
+SUN -> ?
+
+Answer only the result.",TVO,shift_plus_1,easy,3
+23,"Learn the pattern from the examples and answer the question.
+
+CAT -> DBU
+FAN -> GBO
+MAP -> ?
+
+Answer only the result.",NBQ,shift_plus_1,easy,3
+24,"Learn the pattern from the examples and answer the question.
+
+CAT -> DBU
+FAN -> GBO
+RAT -> ?
+
+Answer only the result.",SBU,shift_plus_1,easy,3
+25,"Learn the pattern from the examples and answer the question.
+
+NOTE -> OPUF
+GAME -> HBNF
+HOME -> ?
+
+Answer only the result.",IPNF,shift_plus_1,medium,4
+26,"Learn the pattern from the examples and answer the question.
+
+NOTE -> OPUF
+GAME -> HBNF
+CLOUD -> ?
+
+Answer only the result.",DMPVE,shift_plus_1,medium,5
+27,"Learn the pattern from the examples and answer the question.
+
+NOTE -> OPUF
+GAME -> HBNF
+RAIN -> ?
+
+Answer only the result.",SBJO,shift_plus_1,medium,4
+28,"Learn the pattern from the examples and answer the question.
+
+NOTE -> OPUF
+GAME -> HBNF
+FARM -> ?
+
+Answer only the result.",GBSN,shift_plus_1,medium,4
+29,"Learn the pattern from the examples and answer the question.
+
+12 -> 21
+345 -> 543
+789 -> ?
+
+Answer only the result.",987,mirror_digits,easy,3
+30,"Learn the pattern from the examples and answer the question.
+
+12 -> 21
+345 -> 543
+246 -> ?
+
+Answer only the result.",642,mirror_digits,easy,3
+31,"Learn the pattern from the examples and answer the question.
+
+12 -> 21
+345 -> 543
+135 -> ?
+
+Answer only the result.",531,mirror_digits,easy,3
+32,"Learn the pattern from the examples and answer the question.
+
+12 -> 21
+345 -> 543
+980 -> ?
+
+Answer only the result.",089,mirror_digits,easy,3
+33,"Learn the pattern from the examples and answer the question.
+
+1024 -> 4201
+3567 -> 7653
+1203 -> ?
+
+Answer only the result.",3021,mirror_digits,medium,4
+34,"Learn the pattern from the examples and answer the question.
+
+1024 -> 4201
+3567 -> 7653
+6789 -> ?
+
+Answer only the result.",9876,mirror_digits,medium,4
+35,"Learn the pattern from the examples and answer the question.
+
+1024 -> 4201
+3567 -> 7653
+4501 -> ?
+
+Answer only the result.",1054,mirror_digits,medium,4
+36,"Learn the pattern from the examples and answer the question.
+
+1024 -> 4201
+3567 -> 7653
+9320 -> ?
+
+Answer only the result.",0239,mirror_digits,medium,4

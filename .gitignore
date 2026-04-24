@@ -1,0 +1,17 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Runtime/data artifacts
+/data/
+/results/
+/models/
+/tool_outputs/
+
+# Local tools and caches
+.venv/
+.vscode/
+.DS_Store
+Thumbs.db
