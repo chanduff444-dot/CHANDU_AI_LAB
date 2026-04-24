@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+requests
+langchain-ollama
+chromadb
+sentence-transformers
+pypdf
+psutil
+scikit-learn
+torch
