@@ -23,6 +23,9 @@ Add to sidebar navigation:
 import os
 import subprocess
 import datetime
+import threading
+import time
+from pathlib import Path
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -31,6 +34,9 @@ load_dotenv()
 
 TOKEN    = os.getenv("GITHUB_TOKEN", "")
 USERNAME = os.getenv("GITHUB_USERNAME", "")
+
+AUTO_SYNC_WATCHERS = {}
+AUTO_SYNC_LOCK = threading.Lock()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -239,6 +245,93 @@ def tab_git_commands():
                 st.code(result["output"], language="text")
 
 
+def tab_auto_sync():
+    st.markdown("### Auto Commit + Push")
+    st.caption("Watch a local git repo and push a new commit whenever files change.")
+
+    default_path = f"C:/Users/{USERNAME}/Documents/GitHub"
+    repo_path = st.text_input(
+        "Local repo path",
+        value=st.session_state.get("gh_auto_sync_path", default_path),
+        placeholder="e.g. C:/Users/chandrajit/Documents/GitHub/myrepo",
+        key="gh_auto_sync_path",
+    )
+
+    normalized_path = ""
+    is_repo = False
+    if repo_path.strip() and os.path.isdir(repo_path):
+        try:
+            normalized_path = _normalize_repo_path(repo_path)
+            is_repo, _ = _is_git_repo(normalized_path)
+        except Exception:
+            normalized_path = ""
+
+    remotes = _remote_names(normalized_path) if is_repo else ["origin"]
+    branch_default = _current_branch(normalized_path) if is_repo else "main"
+
+    col1, col2, col3 = st.columns([1, 1, 1])
+    remote = col1.selectbox("Remote", remotes, index=0)
+    branch = col2.text_input("Branch", value=branch_default)
+    interval = col3.number_input("Check every seconds", min_value=10, max_value=3600, value=60, step=10)
+    prefix = st.text_input("Commit prefix", value="auto", placeholder="auto / backup / sync")
+
+    st.info(
+        "This uses your repo's configured git remote. Make sure `git push` works in this folder first, "
+        "and keep generated or secret files out with `.gitignore`."
+    )
+
+    start_col, stop_col, once_col = st.columns(3)
+    if start_col.button("Start Auto Sync", use_container_width=True):
+        ok, message = _start_auto_sync(repo_path, remote, branch, prefix, int(interval))
+        if ok:
+            st.success(message)
+        else:
+            st.error(message)
+
+    if stop_col.button("Stop Auto Sync", use_container_width=True):
+        ok, message = _stop_auto_sync(repo_path)
+        if ok:
+            st.success(message)
+        else:
+            st.warning(message)
+
+    if once_col.button("Sync Once Now", use_container_width=True):
+        try:
+            path = _normalize_repo_path(repo_path)
+            ok, message = _is_git_repo(path)
+            if not ok:
+                st.error(message)
+            else:
+                result = _auto_commit_push_once(path, remote, branch, prefix)
+                if result["success"]:
+                    st.success(result["output"])
+                else:
+                    st.error(result["output"])
+        except Exception as e:
+            st.error(str(e))
+
+    st.divider()
+    st.markdown("**Running watchers**")
+    with AUTO_SYNC_LOCK:
+        watchers = list(AUTO_SYNC_WATCHERS.values())
+
+    active_watchers = [watcher for watcher in watchers if watcher["running"]]
+    if not active_watchers:
+        st.caption("No auto sync watcher is running.")
+        return
+
+    for watcher in active_watchers:
+        status_icon = "OK" if watcher["last_success"] else "ERROR"
+        with st.expander(f"{status_icon} {watcher['repo_path']}"):
+            st.markdown(f"**Remote:** `{watcher['remote']}`")
+            st.markdown(f"**Branch:** `{watcher['branch'] or '(default)'}`")
+            st.markdown(f"**Interval:** `{watcher['interval']}s`")
+            st.markdown(f"**Last checked:** `{watcher['last_checked']}`")
+            st.markdown(f"**Successful syncs:** `{watcher['sync_count']}`")
+            if watcher["last_result"]:
+                st.code(watcher["last_result"], language="text")
+
+
 def _run_git(cmd: str, cwd: str) -> dict:
     try:
         result = subprocess.run(
@@ -251,6 +344,166 @@ def _run_git(cmd: str, cwd: str) -> dict:
         return {"success": False, "output": "⏱ Timed out"}
     except Exception as e:
         return {"success": False, "output": str(e)}
+
+
+def _run_git_args(args, cwd: str, timeout: int = 60) -> dict:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            shell=False,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        output = (result.stdout + result.stderr).strip()
+        return {"success": result.returncode == 0, "output": output}
+    except subprocess.TimeoutExpired:
+        return {"success": False, "output": "Timed out"}
+    except FileNotFoundError:
+        return {"success": False, "output": "Git is not installed or not available in PATH."}
+    except Exception as e:
+        return {"success": False, "output": str(e)}
+
+
+def _normalize_repo_path(repo_path: str) -> str:
+    return str(Path(repo_path).expanduser().resolve())
+
+
+def _is_git_repo(repo_path: str) -> tuple[bool, str]:
+    if not repo_path.strip():
+        return False, "Enter a local repository path."
+    if not os.path.isdir(repo_path):
+        return False, "Folder does not exist."
+
+    result = _run_git_args(["rev-parse", "--is-inside-work-tree"], repo_path)
+    if result["success"] and result["output"].splitlines()[-1].strip() == "true":
+        return True, ""
+    return False, result["output"] or "This folder is not a git repository."
+
+
+def _current_branch(repo_path: str) -> str:
+    result = _run_git_args(["branch", "--show-current"], repo_path)
+    if result["success"] and result["output"].strip():
+        return result["output"].strip()
+    return "main"
+
+
+def _remote_names(repo_path: str) -> list[str]:
+    result = _run_git_args(["remote"], repo_path)
+    if not result["success"] or not result["output"].strip():
+        return ["origin"]
+    return [line.strip() for line in result["output"].splitlines() if line.strip()] or ["origin"]
+
+
+def _auto_commit_push_once(repo_path: str, remote: str, branch: str, prefix: str) -> dict:
+    status = _run_git_args(["status", "--porcelain"], repo_path)
+    if not status["success"]:
+        return {"success": False, "output": status["output"]}
+    if not status["output"].strip():
+        return {"success": True, "output": "No changes found.", "changed": False}
+
+    add_result = _run_git_args(["add", "-A"], repo_path)
+    if not add_result["success"]:
+        return {"success": False, "output": add_result["output"]}
+
+    staged = _run_git_args(["diff", "--cached", "--name-only"], repo_path)
+    changed_files = len([line for line in staged["output"].splitlines() if line.strip()]) if staged["success"] else 0
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    message = f"{prefix.strip() or 'auto'}: sync local changes {timestamp}"
+
+    commit_result = _run_git_args(["commit", "-m", message], repo_path)
+    if not commit_result["success"]:
+        if "nothing to commit" in commit_result["output"].lower():
+            return {"success": True, "output": "No staged changes to commit.", "changed": False}
+        return {"success": False, "output": commit_result["output"]}
+
+    push_args = ["push", remote.strip() or "origin"]
+    if branch.strip():
+        push_args.append(branch.strip())
+    push_result = _run_git_args(push_args, repo_path, timeout=120)
+    if not push_result["success"]:
+        return {"success": False, "output": f"Committed locally, but push failed:\n{push_result['output']}"}
+
+    return {
+        "success": True,
+        "output": f"Committed and pushed {changed_files} file(s): {message}",
+        "changed": True,
+    }
+
+
+def _watcher_loop(key: str, repo_path: str, remote: str, branch: str, prefix: str, interval: int):
+    while True:
+        with AUTO_SYNC_LOCK:
+            watcher = AUTO_SYNC_WATCHERS.get(key)
+            if not watcher or not watcher["running"]:
+                return
+
+        result = _auto_commit_push_once(repo_path, remote, branch, prefix)
+        with AUTO_SYNC_LOCK:
+            watcher = AUTO_SYNC_WATCHERS.get(key)
+            if not watcher:
+                return
+            watcher["last_checked"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            watcher["last_result"] = result["output"]
+            watcher["last_success"] = result["success"]
+            if result.get("changed"):
+                watcher["sync_count"] += 1
+
+        time.sleep(max(10, int(interval)))
+
+
+def _start_auto_sync(repo_path: str, remote: str, branch: str, prefix: str, interval: int) -> tuple[bool, str]:
+    try:
+        normalized_path = _normalize_repo_path(repo_path)
+    except Exception as e:
+        return False, str(e)
+
+    is_repo, message = _is_git_repo(normalized_path)
+    if not is_repo:
+        return False, message
+
+    key = normalized_path.lower()
+    with AUTO_SYNC_LOCK:
+        existing = AUTO_SYNC_WATCHERS.get(key)
+        if existing and existing["running"]:
+            return True, "Auto sync is already running for this repository."
+
+        AUTO_SYNC_WATCHERS[key] = {
+            "repo_path": normalized_path,
+            "remote": remote.strip() or "origin",
+            "branch": branch.strip(),
+            "prefix": prefix.strip() or "auto",
+            "interval": max(10, int(interval)),
+            "running": True,
+            "last_checked": "Waiting for first scan...",
+            "last_result": "",
+            "last_success": True,
+            "sync_count": 0,
+        }
+
+    thread = threading.Thread(
+        target=_watcher_loop,
+        args=(key, normalized_path, remote, branch, prefix, interval),
+        daemon=True,
+    )
+    AUTO_SYNC_WATCHERS[key]["thread"] = thread
+    thread.start()
+    return True, "Auto sync started."
+
+
+def _stop_auto_sync(repo_path: str) -> tuple[bool, str]:
+    try:
+        key = _normalize_repo_path(repo_path).lower()
+    except Exception as e:
+        return False, str(e)
+
+    with AUTO_SYNC_LOCK:
+        watcher = AUTO_SYNC_WATCHERS.get(key)
+        if not watcher:
+            return False, "Auto sync is not running for this repository."
+        watcher["running"] = False
+    return True, "Auto sync stopped."
 
 
 def _git_clone(clone_url: str, folder: str, repo_name: str):
@@ -351,10 +604,11 @@ def show_github_tool_page(page_header):
     st.success(f"✅ Connected as **{USERNAME}**")
     st.divider()
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "👁️ My Repos",
         "📂 Browse Files",
         "🖥️ Git Terminal",
+        "Auto Sync",
         "➕ Create Repo",
         "👤 Profile",
     ])
@@ -362,5 +616,6 @@ def show_github_tool_page(page_header):
     with tab1: tab_my_repos()
     with tab2: tab_browse_files()
     with tab3: tab_git_commands()
-    with tab4: tab_create_repo()
-    with tab5: tab_profile()
+    with tab4: tab_auto_sync()
+    with tab5: tab_create_repo()
+    with tab6: tab_profile()
