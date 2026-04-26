@@ -129,7 +129,7 @@ MODEL_MAP = {
 }
 ```
 
-All models run **100% locally** via Ollama — no API keys, no cloud, no data leaving your machine.
+All models run **100% locally** via Ollama — no API keys, no cloud, no data leaving your machine.Any available ollama models can be used .
 
 ---
 
