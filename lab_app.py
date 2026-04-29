@@ -34,6 +34,9 @@ from tool_system import show_tool_system_page
 from github_tool import show_github_tool_page
 from ai_file_assistant import show_ai_file_assistant_page
 from floating_assistant import inject_floating_assistant
+from neocortex_page import show_neocortex_page
+# ✅ TO THIS
+from style import apply_theme, page_header, stat_card
 # ═════════════════════════════════════════════════════════════
 # CONSTANTS
 # ═════════════════════════════════════════════════════════════
@@ -154,6 +157,42 @@ show_splash()
 # ── Apply theme ───────────────────────────────────────────────
 apply_theme()
 
+# ── Sidebar reopen button ─────────────────────────────────────
+st.components.v1.html("""
+<div id="openBtn" style="
+    position: fixed;
+    left: 0;
+    top: 50vh;
+    transform: translateY(-50%);
+    z-index: 99999;
+    background: #1a73e8;
+    color: white;
+    width: 28px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    font-size: 22px;
+    box-shadow: 3px 0 12px rgba(26,115,232,0.6);
+    user-select: none;
+">›</div>
+<script>
+document.getElementById('openBtn').addEventListener('click', function() {
+    var p = window.parent.document;
+    var selectors = [
+        '[data-testid="collapsedControl"]',
+        '[data-testid="stSidebarCollapsedControl"]',
+        'button[kind="header"]',
+        'section[data-testid="stSidebar"] + div button'
+    ];
+    selectors.forEach(function(sel) {
+        p.querySelectorAll(sel).forEach(function(b) { b.click(); });
+    });
+});
+</script>
+""", height=60)
 # ── Global orchestrator ───────────────────────────────────────
 if "orchestrator" not in st.session_state:
     st.session_state.orchestrator = MasterOrchestrator()
@@ -164,7 +203,7 @@ orchestrator: MasterOrchestrator = st.session_state.orchestrator
 # ═════════════════════════════════════════════════════════════
 # SIDEBAR
 # ═════════════════════════════════════════════════════════════
-
+page_name = st.session_state.get("page", "Brain")
 with st.sidebar:
 
     # ── Logo ──────────────────────────────────────────────────
@@ -204,7 +243,6 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-
     # ── Active Project ─────────────────────────────────────────
     project = load_project()
     if project:
@@ -266,6 +304,7 @@ with st.sidebar:
         "📚 Knowledge",
         "🧪 Experiments",
         "📊 Dashboard",
+        "NC Neocortex",
         "⚛ Physics",
         "🎮 Game Lab",
         "🧠 Neural Network Visualiser",
@@ -278,7 +317,6 @@ with st.sidebar:
 )
 # Strip emoji prefix for comparisons
 page_name = page.split(" ", 1)[1]
-
 # ADD THIS RIGHT HERE ↓
 inject_floating_assistant(model="gemma3:latest", current_page=page_name)
 
@@ -547,6 +585,9 @@ elif page_name == "Dashboard":
 # ═════════════════════════════════════════════════════════════
 # PAGE: PHYSICS
 # ═════════════════════════════════════════════════════════════
+
+elif page_name == "Neocortex":
+    show_neocortex_page(page_header, MODEL_MAP)
 
 elif page_name == "Physics":
     show_physics_page(page_header, MODEL_MAP)
