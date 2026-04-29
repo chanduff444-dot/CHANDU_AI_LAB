@@ -98,11 +98,11 @@ def tab_my_repos():
     st.markdown("### 👁️ Your Repositories")
 
     col1, col2, col3 = st.columns([1, 1, 1])
-    filter_type     = col1.selectbox("Type", ["all", "public", "private"])
-    sort_by         = col2.selectbox("Sort", ["updated", "created", "pushed", "full_name"])
-    search_query    = col3.text_input("🔍 Search repos", placeholder="e.g. snake")
+    filter_type     = col1.selectbox("Type", ["all", "public", "private"], key="gh_repos_type")
+    sort_by         = col2.selectbox("Sort", ["updated", "created", "pushed", "full_name"], key="gh_repos_sort")
+    search_query    = col3.text_input("🔍 Search repos", placeholder="e.g. snake", key="gh_repos_search")
 
-    if st.button("🔄 Load Repos", use_container_width=True):
+    if st.button("🔄 Load Repos", use_container_width=True, key="gh_repos_load"):
         with st.spinner("Fetching from GitHub..."):
             try:
                 user  = _get_user()
@@ -173,13 +173,13 @@ def tab_browse_files():
         st.info("Load your repos first from the **My Repos** tab.")
         return
 
-    selected_name = st.selectbox("Select repo", repo_names)
+    selected_name = st.selectbox("Select repo", repo_names, key="gh_browse_selected_repo")
     repo_obj = next((r for r in repos if r.name == selected_name), None)
 
-    branch = st.text_input("Branch", value="main")
-    path   = st.text_input("Path (leave blank for root)", value="")
+    branch = st.text_input("Branch", value="main", key="gh_browse_branch")
+    path   = st.text_input("Path (leave blank for root)", value="", key="gh_browse_path")
 
-    if st.button("📂 Load Files", use_container_width=True):
+    if st.button("📂 Load Files", use_container_width=True, key="gh_browse_load_files"):
         with st.spinner("Loading files..."):
             try:
                 contents = repo_obj.get_contents(path or "", ref=branch)
@@ -221,6 +221,7 @@ def tab_git_commands():
         "Local repo path",
         value=f"C:/Users/{_github_username()}/Documents/GitHub",
         placeholder="e.g. C:/Users/chandrajit/Documents/GitHub/myrepo",
+        key="gh_terminal_repo_path",
     )
 
     # Quick command buttons
@@ -228,11 +229,11 @@ def tab_git_commands():
     qc1, qc2, qc3, qc4, qc5 = st.columns(5)
 
     quick_cmd = None
-    if qc1.button("📊 Status"):    quick_cmd = "git status"
-    if qc2.button("📜 Log"):       quick_cmd = "git log --oneline -10"
-    if qc3.button("⬇️ Pull"):      quick_cmd = "git pull"
-    if qc4.button("📤 Push"):      quick_cmd = "git push"
-    if qc5.button("🌿 Branches"):  quick_cmd = "git branch -a"
+    if qc1.button("📊 Status", key="gh_qc_status"):    quick_cmd = "git status"
+    if qc2.button("📜 Log", key="gh_qc_log"):          quick_cmd = "git log --oneline -10"
+    if qc3.button("⬇️ Pull", key="gh_qc_pull"):        quick_cmd = "git pull"
+    if qc4.button("📤 Push", key="gh_qc_push"):        quick_cmd = "git push"
+    if qc5.button("🌿 Branches", key="gh_qc_branches"): quick_cmd = "git branch -a"
 
     st.markdown("**📝 Custom Command**")
     custom_cmd = st.text_input(
@@ -240,12 +241,13 @@ def tab_git_commands():
         value=quick_cmd or "git status",
         placeholder="git status / git log / git pull ...",
         label_visibility="collapsed",
+        key="gh_terminal_command",
     )
 
     # Commit helper
     with st.expander("📦 Quick Commit + Push"):
-        commit_msg = st.text_input("Commit message", placeholder="e.g. fix: updated snake game")
-        if st.button("🚀 Add → Commit → Push", use_container_width=True):
+        commit_msg = st.text_input("Commit message", placeholder="e.g. fix: updated snake game", key="gh_terminal_commit_msg")
+        if st.button("🚀 Add → Commit → Push", use_container_width=True, key="gh_terminal_commit_push"):
             if commit_msg.strip():
                 cmds = [
                     "git add .",
@@ -263,7 +265,7 @@ def tab_git_commands():
             else:
                 st.warning("Enter a commit message.")
 
-    if st.button("▶ Run Command", use_container_width=True):
+    if st.button("▶ Run Command", use_container_width=True, key="gh_terminal_run"):
         if custom_cmd.strip():
             result = _run_git(custom_cmd, repo_path)
             st.markdown("**Output:**")
@@ -299,10 +301,10 @@ def tab_auto_sync():
     branch_default = _current_branch(normalized_path) if is_repo else "main"
 
     col1, col2, col3 = st.columns([1, 1, 1])
-    remote = col1.selectbox("Remote", remotes, index=0)
-    branch = col2.text_input("Branch", value=branch_default)
-    interval = col3.number_input("Check every seconds", min_value=10, max_value=3600, value=60, step=10)
-    prefix = st.text_input("Commit prefix", value="auto", placeholder="auto / backup / sync")
+    remote = col1.selectbox("Remote", remotes, index=0, key="gh_auto_remote")
+    branch = col2.text_input("Branch", value=branch_default, key="gh_auto_branch")
+    interval = col3.number_input("Check every seconds", min_value=10, max_value=3600, value=60, step=10, key="gh_auto_interval")
+    prefix = st.text_input("Commit prefix", value="auto", placeholder="auto / backup / sync", key="gh_auto_prefix")
 
     st.info(
         "This uses your repo's configured git remote. Make sure `git push` works in this folder first, "
@@ -310,21 +312,21 @@ def tab_auto_sync():
     )
 
     start_col, stop_col, once_col = st.columns(3)
-    if start_col.button("Start Auto Sync", use_container_width=True):
+    if start_col.button("Start Auto Sync", use_container_width=True, key="gh_auto_start"):
         ok, message = _start_auto_sync(repo_path, remote, branch, prefix, int(interval))
         if ok:
             st.success(message)
         else:
             st.error(message)
 
-    if stop_col.button("Stop Auto Sync", use_container_width=True):
+    if stop_col.button("Stop Auto Sync", use_container_width=True, key="gh_auto_stop"):
         ok, message = _stop_auto_sync(repo_path)
         if ok:
             st.success(message)
         else:
             st.warning(message)
 
-    if once_col.button("Sync Once Now", use_container_width=True):
+    if once_col.button("Sync Once Now", use_container_width=True, key="gh_auto_once"):
         try:
             path = _normalize_repo_path(repo_path)
             ok, message = _is_git_repo(path)
@@ -554,12 +556,12 @@ def _git_clone(clone_url: str, folder: str, repo_name: str):
 def tab_create_repo():
     st.markdown("### ➕ Create New Repository")
 
-    name        = st.text_input("Repo name", placeholder="e.g. chandu-ai-lab")
-    description = st.text_input("Description", placeholder="e.g. My personal AI OS")
-    private     = st.checkbox("🔒 Private repo", value=True)
-    auto_init   = st.checkbox("📄 Initialize with README", value=True)
+    name        = st.text_input("Repo name", placeholder="e.g. chandu-ai-lab", key="gh_create_name")
+    description = st.text_input("Description", placeholder="e.g. My personal AI OS", key="gh_create_description")
+    private     = st.checkbox("🔒 Private repo", value=True, key="gh_create_private")
+    auto_init   = st.checkbox("📄 Initialize with README", value=True, key="gh_create_auto_init")
 
-    if st.button("🚀 Create Repo on GitHub", use_container_width=True):
+    if st.button("🚀 Create Repo on GitHub", use_container_width=True, key="gh_create_submit"):
         if not name.strip():
             st.warning("Enter a repo name.")
             return
@@ -585,7 +587,7 @@ def tab_create_repo():
 def tab_profile():
     st.markdown("### 👤 GitHub Profile")
 
-    if st.button("Load Profile", use_container_width=True):
+    if st.button("Load Profile", use_container_width=True, key="gh_profile_load"):
         with st.spinner("Loading..."):
             try:
                 user = _get_user()
