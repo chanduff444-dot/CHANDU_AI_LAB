@@ -22,6 +22,7 @@ Every interaction is logged. Every session makes the system smarter about *you*.
 | 📚 **Knowledge** | Upload PDFs to expand the system's memory via vector embeddings |
 | 🧪 **Experiments** | Log, compare and analyze ML model runs with accuracy/loss tracking |
 | 📊 **Dashboard** | Live cognitive performance scores — CSI, Depth, Balance, Ownership |
+| **NC Neocortex** | Offline multimodal concept explainer with text, visual, narration, and HTML export |
 | ⚛️ **Physics** | Physics problem solver and explainer module |
 | 🎮 **Game Lab** | Train Q-Learning and DQN agents — watch them learn in real time |
 
@@ -34,6 +35,7 @@ CHANDU_CORE/
 ├── lab_app.py              # Main Streamlit entry point
 ├── splash.py               # Gold hero splash screen
 ├── style.py                # Global dark theme + components
+├── neocortex_page.py        # Offline concept explainer: text + image + narration
 ├── game_lab_page.py        # RL Game Lab page
 ├── physics_page.py         # Physics module
 │
@@ -104,6 +106,32 @@ Train a reinforcement learning agent on a configurable GridWorld:
 
 ---
 
+## Neocortex — Offline Concept Explainer
+
+Neocortex turns one concept into a small learning packet for students in low-connectivity regions.
+
+Phase 1 MVP includes:
+
+- **Text explanation:** Ollama generates a clean 5-sentence explanation.
+- **Image:** Built-in offline SVG preview by default, with optional Automatic1111 API image generation.
+- **Narration:** Piper-compatible local audio generation when configured.
+- **Export:** Offline HTML summary with embedded text, image, and audio.
+
+Pipeline:
+
+```
+Concept input
+-> Ollama structured JSON
+-> explanation + image prompt + narration
+-> built-in SVG or local Stable Diffusion image
+-> optional Piper audio
+-> Streamlit presentation + offline HTML export
+```
+
+The built-in SVG mode works immediately without internet or a GPU image server. For AI-generated illustrations, start Automatic1111 locally with API mode enabled and select **Automatic1111 API** inside the Neocortex sidebar.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -111,6 +139,7 @@ Train a reinforcement learning agent on a configurable GridWorld:
 | UI | Streamlit |
 | LLMs | Ollama (local) — Mistral, LLaMA 3, DeepSeek, Qwen |
 | Orchestration | LangChain + custom routing |
+| Multimodal Learning | Neocortex: Ollama JSON, SVG fallback, Automatic1111 API, Piper TTS |
 | Embeddings | PDF ingestion -> vector store |
 | RL | Custom Q-Learning, NumPy |
 | Styling | Custom dark theme (DM Sans, DM Mono) |
@@ -139,6 +168,8 @@ All models run **100% locally** via Ollama — no API keys, no cloud, no data le
 - Python 3.10+
 - [Ollama](https://ollama.ai) installed and running
 - At least one model pulled: `ollama pull mistral`
+- Optional for Neocortex images: Automatic1111 running with `--api`
+- Optional for Neocortex audio: Piper installed with a local voice model
 
 ### Install
 
@@ -171,6 +202,22 @@ ollama pull deepseek-coder:6.7b  # Code generation
 ollama pull qwen3:14b      # Powerful, large context
 ```
 
+### Optional Neocortex Engines
+
+For AI image generation:
+
+```bash
+webui-user.bat --api
+```
+
+Then choose **Automatic1111 API** in the Neocortex sidebar and keep the default URL:
+
+```text
+http://127.0.0.1:7860
+```
+
+For audio narration, install Piper and enter the Piper executable plus voice model path in the Neocortex sidebar. If Piper is not configured, Neocortex still generates the explanation and visual packet.
+
 ---
 
 ## Key Components
@@ -194,6 +241,14 @@ Enable **Creator Mode** for full technical detail in every response.
 3. HTML apps render live in an iframe
 4. Download the final output
 
+### Neocortex — Concept Learning Packet
+
+1. Enter a concept, such as `how data transfer from cpu to gpu work`
+2. Select an Ollama model and language
+3. Generate the packet
+4. View the explanation, concept visual, narration script, and JSON
+5. Export an offline HTML summary
+
 ### Experiment Tracker
 
 Log any ML run:
@@ -214,6 +269,13 @@ Compare accuracy/loss curves, see best performers, run AI analysis on your resul
 
 ## Roadmap
 
+- [x] Neocortex Phase 1: Text explanation
+- [x] Neocortex Phase 1: Static concept visual
+- [x] Neocortex Phase 1: Offline HTML export
+- [ ] Neocortex Phase 1: Piper/Kokoro audio presets
+- [ ] Neocortex Phase 2: Multi-language polish
+- [ ] Neocortex Phase 2: Whisper local voice input
+- [ ] Neocortex Phase 3: Explainer video generation
 - [ ] Phase 2 Game Lab: Snake + Deep Q-Network (DQN)
 - [ ] Hero banner on Brain empty state
 - [ ] Gold progress bar (branding consistency)
