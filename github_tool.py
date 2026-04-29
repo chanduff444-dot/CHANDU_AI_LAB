@@ -30,7 +30,7 @@ from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 TOKEN    = os.getenv("GITHUB_TOKEN", "")
 USERNAME = os.getenv("GITHUB_USERNAME", "")
@@ -43,22 +43,51 @@ AUTO_SYNC_LOCK = threading.Lock()
 # GitHub client (lazy init)
 # ═══════════════════════════════════════════════════════════════════════════
 
+def _env_value(key: str) -> str:
+    load_dotenv(override=True)
+    return os.getenv(key, "").strip()
+
+
+def _github_token() -> str:
+    return _env_value("GITHUB_TOKEN")
+
+
+def _github_username() -> str:
+    return _env_value("GITHUB_USERNAME") or USERNAME
+
+
+def _github_auth_message(error: Exception | None = None) -> str:
+    detail = f"\n\nGitHub returned: `{error}`" if error else ""
+    return (
+        "GitHub token is missing or invalid. Create a new token and update `.env`:\n\n"
+        "```env\n"
+        "GITHUB_TOKEN=your_new_token_here\n"
+        "GITHUB_USERNAME=your_github_username\n"
+        "```\n\n"
+        "For classic tokens, enable the `repo` scope. For fine-grained tokens, give it access "
+        "to the repositories you want Chandu AI Lab to manage, with repository read/write permissions."
+        f"{detail}"
+    )
+
+
 def _get_github():
     try:
         from github import Github
-        return Github(TOKEN)
+        return Github(_github_token())
     except ImportError:
         st.error("❌ PyGithub not installed. Run: `pip install PyGithub python-dotenv`")
         st.stop()
 
 
-def _get_user():
+def _get_user(stop_on_error=True):
     g = _get_github()
     try:
         return g.get_user()
     except Exception as e:
-        st.error(f"❌ GitHub auth failed: {e}\nCheck your token in `.env`")
-        st.stop()
+        if stop_on_error:
+            st.error(_github_auth_message(e))
+            st.stop()
+        raise
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -117,7 +146,7 @@ def tab_my_repos():
                     # Clone button
                     clone_path = st.text_input(
                         "Clone to folder",
-                        value=f"C:/Users/{USERNAME}/Documents/GitHub",
+                        value=f"C:/Users/{_github_username()}/Documents/GitHub",
                         key=f"clone_path_{repo.name}",
                         label_visibility="collapsed",
                     )
@@ -190,7 +219,7 @@ def tab_git_commands():
 
     repo_path = st.text_input(
         "Local repo path",
-        value=f"C:/Users/{USERNAME}/Documents/GitHub",
+        value=f"C:/Users/{_github_username()}/Documents/GitHub",
         placeholder="e.g. C:/Users/chandrajit/Documents/GitHub/myrepo",
     )
 
@@ -249,7 +278,7 @@ def tab_auto_sync():
     st.markdown("### Auto Commit + Push")
     st.caption("Watch a local git repo and push a new commit whenever files change.")
 
-    default_path = f"C:/Users/{USERNAME}/Documents/GitHub"
+    default_path = f"C:/Users/{_github_username()}/Documents/GitHub"
     repo_path = st.text_input(
         "Local repo path",
         value=st.session_state.get("gh_auto_sync_path", default_path),
@@ -508,8 +537,9 @@ def _stop_auto_sync(repo_path: str) -> tuple[bool, str]:
 
 def _git_clone(clone_url: str, folder: str, repo_name: str):
     # Inject token into URL for private repos
-    if TOKEN:
-        clone_url = clone_url.replace("https://", f"https://{TOKEN}@")
+    token = _github_token()
+    if token:
+        clone_url = clone_url.replace("https://", f"https://{token}@")
     result = _run_git(f"git clone {clone_url}", folder)
     if result["success"]:
         st.success(f"✅ Cloned to `{folder}/{repo_name}`")
@@ -592,16 +622,18 @@ def show_github_tool_page(page_header):
         "Manage your repos, browse files, run git commands — all from AI Lab"
     )
 
-    # Token check
-    if not TOKEN:
-        st.error(
-            "❌ No GitHub token found.\n\n"
-            "Create a `.env` file in your CHANDU_CORE folder with:\n"
-            "```\nGITHUB_TOKEN=ghp_yourtoken\nGITHUB_USERNAME=yourusername\n```"
-        )
+    token = _github_token()
+    if not token:
+        st.error(_github_auth_message())
         return
 
-    st.success(f"✅ Connected as **{USERNAME}**")
+    try:
+        user = _get_user(stop_on_error=False)
+    except Exception as e:
+        st.error(_github_auth_message(e))
+        return
+
+    st.success(f"✅ Connected as **{user.login}**")
     st.divider()
 
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
